@@ -1,0 +1,8 @@
+is_global = true
+build_property.RootNamespace = SourceGeneratorSamples
+build_property.ProjectDir = G:\Work\overridable-scriptable-objects\SourceGenerator\SourceGeneratorSamples\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.EffectiveAnalysisLevelStyle = 
+build_property.EnableCodeStyleSeverity = 

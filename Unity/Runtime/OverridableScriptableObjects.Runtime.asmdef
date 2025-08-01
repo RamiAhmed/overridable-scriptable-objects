@@ -1,6 +1,6 @@
 {
     "name": "OverridableScriptableObjects.Runtime",
-    "rootNamespace": "OverridableScriptableObjects",
+    "rootNamespace": "OverridableScriptableObjects.Runtime",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

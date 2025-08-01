@@ -45,7 +45,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
         // Check if the class or struct implements the interface
         var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration, cancellationToken);
         if (typeSymbol == null
-            || !typeSymbol.AllInterfaces.Any(i => i.Name.StartsWith(InterfaceName, StringComparison.OrdinalIgnoreCase)))
+            || !InheritsFrom(typeSymbol, "OverridableScriptableObject"))
             return null;
 
         return typeDeclaration;
@@ -75,7 +75,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                 .Where(n => n is not null)
                 .Select(n => n.ToDisplayString())
                 .Where(n => n != namespaceName)
-                //.Append("OverridableScriptableObjects")
+                .Append("OverridableScriptableObjects.Runtime")
                 .Distinct()
                 .OrderBy(n => n)
                 .Select(n => $"using {n};");
@@ -94,7 +94,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                              /// It contains fields for each public instance field of the class.
                              /// </summary>
                              [System.Serializable]
-                             public class {{typeName}}_GeneratedSerializableData
+                             public class {{typeName}}_GeneratedSerializableData : ISerializableOverridableScriptableObject
                              {
                                  // Fields
                                  {{string.Join("\n\t\t", fields.Select(p => $"public {p.Type.ToDisplayString()} {p.Name};"))}}
@@ -102,25 +102,27 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                                  /// <summary>
                                  /// Applies the field values to the target object, effectively copying the data.
                                  /// </summary>
-                                 public void ApplyTo({{typeName}} target)
+                                 public void ApplyTo(OverridableScriptableObject target)
                                  {
                                      if (target == null) 
                                         throw new ArgumentNullException(nameof(target));
 
                                      // Apply fields to the target object
-                                     {{string.Join("\n\t\t\t", fields.Select(p => $"target.{p.Name} = {p.Name};"))}}
+                                     var t = ({{typeName}})target;
+                                     {{string.Join("\n\t\t\t", fields.Select(p => $"t.{p.Name} = {p.Name};"))}}
                                  }
                                  
                                  /// <summary>
                                  /// Copies the field values from the source object to this instance.
                                  /// </summary>
-                                 public void CopyFrom({{typeName}} source)
+                                 public void CopyFrom(OverridableScriptableObject source)
                                  {
                                      if (source == null) 
                                         throw new ArgumentNullException(nameof(source));
 
                                      // Copy fields from the source object
-                                     {{string.Join("\n\t\t\t", fields.Select(p => $"{p.Name} = source.{p.Name};"))}}
+                                     var s = ({{typeName}})source;
+                                     {{string.Join("\n\t\t\t", fields.Select(p => $"{p.Name} = s.{p.Name};"))}}
                                  }
                              }
                          }
@@ -153,5 +155,22 @@ public class SerializableObjectGenerator : IIncrementalGenerator
             if (currentType?.Name == "ScriptableObject")
                 break;
         }
+    }
+
+    private static bool InheritsFrom(ITypeSymbol typeSymbol, string baseTypeName)
+    {
+        var current = typeSymbol.BaseType;
+        while (current != null && current.SpecialType != SpecialType.System_Object)
+        {
+            if (current.Name == baseTypeName)
+                return true;
+
+            current = current.BaseType;
+
+            if (current?.Name == "ScriptableObject")
+                break; // Stop if we reach ScriptableObject, as we don't want to include its properties.
+        }
+
+        return false;
     }
 }

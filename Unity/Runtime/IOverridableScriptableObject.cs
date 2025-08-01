@@ -1,6 +1,8 @@
-﻿namespace OverridableScriptableObjects
+﻿using UnityEngine;
+
+namespace OverridableScriptableObjects.Runtime
 {
-    public interface IOverridableScriptableObject
+    public abstract class OverridableScriptableObject : ScriptableObject
     {
     }
 }

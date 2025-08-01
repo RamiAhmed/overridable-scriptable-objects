@@ -1,7 +1,9 @@
 {
     "name": "OverridableScriptableObjects.Editor",
-    "rootNamespace": "OverridableScriptableObjects",
-    "references": [],
+    "rootNamespace": "OverridableScriptableObjects.Editor",
+    "references": [
+        "GUID:63541f0d2ab837f40a3dc60441658571"
+    ],
     "includePlatforms": [
         "Editor"
     ],

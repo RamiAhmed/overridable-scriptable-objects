@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using OverridableScriptableObjects.Runtime;
+using UnityEngine;
 
 namespace OverridableScriptableObjects.Samples.Basic
 {
     [CreateAssetMenu(fileName = "ScriptableObjectTest", menuName = "OverridableScriptableObjects/ScriptableObjectTest")]
-    public class ScriptableObjectTest : ScriptableObject, IOverridableScriptableObject
+    public class ScriptableObjectTest : OverridableScriptableObject
     {
         public string TestString = "ABC";
         public float TestFloat = 123.456f;

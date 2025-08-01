@@ -1,0 +1,16 @@
+{
+    "name": "OverridableScriptableObjects.Samples.Basic",
+    "rootNamespace": "OverridableScriptableObjects.Samples.Basic",
+    "references": [
+        "GUID:63541f0d2ab837f40a3dc60441658571"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,22 @@
+{
+  "name": "com.ramiahmed.overridable-scriptable-objects",
+  "version": "0.0.1",
+  "description": "Support for overriding scriptable objects in Unity by placing a JSON representation of the file in the persistent data folder.",
+  "displayName": "Overridable Scriptable Objects",
+  "unity": "6000.0",
+  "author": {
+    "name": "Rami Ahmed Bock",
+    "url": "https://github.com/RamiAhmed"
+  },
+  "dependencies": {
+    
+  },
+  "keywords": ["Scriptable Object", "Override"],
+  "samples": [
+    {
+      "displayName": "Basic Sample",
+      "description": "A sample demonstrating how to use overridable scriptable objects.",
+      "path": "Samples~/Basic"
+    }
+  ]
+}

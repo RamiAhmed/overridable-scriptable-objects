@@ -12,3 +12,4 @@ G:\Work\overridable-scriptable-objects\SourceGenerator\SourceGeneratorSamples\ob
 G:\Work\overridable-scriptable-objects\SourceGenerator\SourceGeneratorSamples\obj\Release\net9.0\SourceGeneratorSamples.pdb
 G:\Work\overridable-scriptable-objects\SourceGenerator\SourceGeneratorSamples\obj\Release\net9.0\SourceGeneratorSamples.genruntimeconfig.cache
 G:\Work\overridable-scriptable-objects\SourceGenerator\SourceGeneratorSamples\obj\Release\net9.0\ref\SourceGeneratorSamples.dll
+G:\Work\overridable-scriptable-objects\SourceGenerator\SourceGeneratorSamples\obj\Release\net9.0\SourceGeneratorSamples.sourcelink.json

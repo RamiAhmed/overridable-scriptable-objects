@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace OverridableScriptableObjects.Editor
 {
+    /// <summary>
+    ///     Custom editor for <see cref="OverridableScriptableObject"/>.
+    ///     This editor provides a panel with buttons to save, load, show, and delete overrides for the scriptable object.
+    ///     It also displays the default inspector for the scriptable object, allowing users to edit its properties.
+    ///     The override file is stored in the persistent data path of the application (see <see cref="Application.persistentDataPath"/>).
+    /// </summary>
     [CustomEditor(typeof(OverridableScriptableObject), true)]
     public class OverridableScriptableObjectEditor : UnityEditor.Editor
     {
@@ -27,7 +33,7 @@ namespace OverridableScriptableObjects.Editor
             if (GUILayout.Button("Save As Override", EditorStyles.miniButtonLeft))
             {
                 if (t.SaveOverride())
-                    Debug.Log($"Saved override for {t.name}");
+                    Debug.Log($"Saved override for {t.name} successfully");
                 else
                     Debug.LogWarning($"Failed to save override for {t.name}");
             }
@@ -36,14 +42,14 @@ namespace OverridableScriptableObjects.Editor
 
             if (GUILayout.Button("Load From Override", EditorStyles.miniButtonMid))
             {
-                if (t.LoadOverride())
-                    Debug.Log($"Loaded override for {t.name}");
+                if (t.LoadOverride() != null)
+                    Debug.Log($"Loaded override for {t.name} successfully");
                 else
                     Debug.LogWarning($"Failed to load override for {t.name}");
             }
 
             if (GUILayout.Button("Show File in Explorer", EditorStyles.miniButtonMid))
-                EditorUtility.RevealInFinder(t.GetOverridesPath());
+                EditorUtility.RevealInFinder(t.GetOverrideFilePath());
 
             if (GUILayout.Button("Delete Override", EditorStyles.miniButtonRight))
             {
@@ -52,7 +58,7 @@ namespace OverridableScriptableObjects.Editor
                     return;
 
                 if (t.DeleteOverride())
-                    Debug.Log($"Deleted override for {t.name}");
+                    Debug.Log($"Deleted override for {t.name} successfully");
                 else
                     Debug.LogWarning($"Failed to delete override for {t.name}");
             }

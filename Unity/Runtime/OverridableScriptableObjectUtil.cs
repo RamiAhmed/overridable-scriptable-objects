@@ -1,31 +1,57 @@
 ﻿using System;
 using System.IO;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace OverridableScriptableObjects.Runtime
 {
+    /// <summary>
+    ///     Utility & extension class for managing overrides of scriptable objects (<see cref="OverridableScriptableObject"/>). 
+    /// </summary>
     public static class OverridableScriptableObjectUtil
     {
         private const string OverridesFolder = "Overrides";
 
+        /// <summary>
+        ///     Checks if a scriptable object override exists for the given scriptable object.
+        /// </summary>
+        /// <param name="scriptableObject">Scriptable object to check</param>
+        /// <typeparam name="T">Type of scriptable object</typeparam>
+        /// <returns>True if the override file exists, otherwise false.</returns>
         public static bool ExistsOverride<T>(this T scriptableObject) where T : OverridableScriptableObject
         {
             return Exists(scriptableObject.GetType());
         }
 
+        /// <summary>
+        ///     Checks if an override file exists for the given type.
+        /// </summary>
+        /// <param name="type">Type of the scriptable object</param>
+        /// <returns>True if the override file exists, otherwise false.</returns>
         public static bool Exists(Type type)
         {
-            return Exists(GetOverridesPath(type));
+            return Exists(GetOverrideFilePath(type));
         }
 
+        /// <summary>
+        ///     Deletes the override file for the given scriptable object.
+        /// </summary>
+        /// <typeparam name="T">Type of scriptable object</typeparam>
+        /// <param name="scriptableObject">Scriptable object to delete override for</param>
+        /// <returns>True if the override was deleted, otherwise false.</returns>
         public static bool DeleteOverride<T>(this T scriptableObject) where T : OverridableScriptableObject
         {
             return Delete(scriptableObject.GetType());
         }
 
+        /// <summary>
+        ///     Deletes the override file for the given type.
+        /// </summary>
+        /// <param name="type">Type of the scriptable object</param>
+        /// <returns>True if the override was deleted, otherwise false.</returns>
         public static bool Delete(Type type)
         {
-            var overridesPath = GetOverridesPath(type);
+            var overridesPath = GetOverrideFilePath(type);
             if (!Exists(overridesPath))
                 return false;
 
@@ -33,6 +59,14 @@ namespace OverridableScriptableObjects.Runtime
             return true;
         }
 
+        /// <summary>
+        ///     Saves the override for the given scriptable object.
+        /// </summary>
+        /// <typeparam name="T">Type of scriptable object</typeparam>
+        /// <param name="scriptableObject">Scriptable object to save</param>
+        /// <param name="overrideIfExists">Whether to override if the file exists</param>
+        /// <param name="prettyPrintJson">Whether to pretty print the JSON</param>
+        /// <returns>True if the override was saved, otherwise false.</returns>
         public static bool SaveOverride<T>(
             this T scriptableObject,
             bool overrideIfExists = true,
@@ -42,6 +76,13 @@ namespace OverridableScriptableObjects.Runtime
             return Save(scriptableObject, overrideIfExists, prettyPrintJson);
         }
 
+        /// <summary>
+        ///     Saves the override for the given scriptable object instance.
+        /// </summary>
+        /// <param name="scriptableObject">Scriptable object to save</param>
+        /// <param name="overrideIfExists">Whether to override if the file exists</param>
+        /// <param name="prettyPrintJson">Whether to pretty print the JSON</param>
+        /// <returns>True if the override was saved, otherwise false.</returns>
         public static bool Save(
             OverridableScriptableObject scriptableObject,
             bool overrideIfExists = true,
@@ -52,7 +93,7 @@ namespace OverridableScriptableObjects.Runtime
 
             var type = scriptableObject.GetType();
 
-            var overridesPath = GetOverridesPath(type);
+            var overridesPath = GetOverrideFilePath(type);
             if (!overrideIfExists && Exists(overridesPath))
                 return false;
 
@@ -72,52 +113,80 @@ namespace OverridableScriptableObjects.Runtime
             return true;
         }
 
-        public static bool LoadOverride<T>(this T scriptableObject) where T : OverridableScriptableObject
+        /// <summary>
+        ///     Loads the override for the given scriptable object and applies it.
+        /// </summary>
+        /// <typeparam name="T">Type of scriptable object</typeparam>
+        /// <param name="scriptableObject">Scriptable object to load override for</param>
+        /// <returns>The scriptable object with override applied, or null if not found.</returns>
+        public static T LoadOverride<T>(this T scriptableObject) where T : OverridableScriptableObject
         {
-            return Load(scriptableObject);
+            return (T)Load(scriptableObject);
         }
 
-        public static bool Load(OverridableScriptableObject scriptableObject)
+        /// <summary>
+        ///     Loads the override for the given scriptable object and applies it.
+        /// </summary>
+        /// <param name="scriptableObject">Scriptable object to load override for</param>
+        /// <returns>The scriptable object with override applied, or null if not found.</returns>
+        public static OverridableScriptableObject Load(OverridableScriptableObject scriptableObject)
         {
             if (scriptableObject == null)
                 throw new ArgumentNullException(nameof(scriptableObject));
 
             var type = scriptableObject.GetType();
 
-            var overridesPath = GetOverridesPath(type);
+            var overridesPath = GetOverrideFilePath(type);
             if (!Exists(overridesPath))
-                return false;
+                return null;
 
             var json = File.ReadAllText(overridesPath);
             if (string.IsNullOrEmpty(json))
-                return false;
+                return null;
 
             var dataType = GetSerializableDataType(type);
             if (JsonUtility.FromJson(json, dataType) is not ISerializableOverridableScriptableObject data)
-                return false;
+                return null;
+
+#if UNITY_EDITOR
+            // In the editor we instantiate the scriptable object to avoid changing the original asset's values.
+            // In a build this is not a problem since the scriptable object edits won't persist beyond that session.
+            scriptableObject = Object.Instantiate(scriptableObject);
+#endif
 
             data.ApplyTo(scriptableObject);
-            return true;
+            return scriptableObject;
         }
 
-        public static string GetOverridesPath<T>(this T scriptableObject) where T : OverridableScriptableObject
+        /// <summary>
+        ///     Gets the path to the override file for the given scriptable object.
+        /// </summary>
+        /// <typeparam name="T">Type of scriptable object</typeparam>
+        /// <param name="scriptableObject">Scriptable object to get path for</param>
+        /// <returns>Path to the override file.</returns>
+        public static string GetOverrideFilePath<T>(this T scriptableObject) where T : OverridableScriptableObject
         {
-            return GetOverridesPath(scriptableObject.GetType());
+            return GetOverrideFilePath(scriptableObject.GetType());
         }
 
-        public static string GetOverridesPath(Type type)
+        /// <summary>
+        ///     Gets the path to the override file for the given type.
+        /// </summary>
+        /// <param name="type">Type of the scriptable object</param>
+        /// <returns>Path to the override file.</returns>
+        public static string GetOverrideFilePath(Type type)
         {
             return Path.Combine(GetOverridesDirectoryPath(), type.Name + ".json");
-        }
-
-        private static string GetOverridesDirectoryPath()
-        {
-            return Path.Combine(Application.persistentDataPath, OverridesFolder);
         }
 
         private static bool Exists(string path)
         {
             return File.Exists(path);
+        }
+
+        private static string GetOverridesDirectoryPath()
+        {
+            return Path.Combine(Application.persistentDataPath, OverridesFolder);
         }
 
         private static Type GetSerializableDataType(Type type)

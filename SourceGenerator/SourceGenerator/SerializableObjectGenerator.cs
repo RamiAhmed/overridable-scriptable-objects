@@ -99,9 +99,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                                  // Fields
                                  {{string.Join("\n\t\t", fields.Select(p => $"public {p.Type.ToDisplayString()} {p.Name};"))}}
                                  
-                                 /// <summary>
-                                 /// Applies the field values to the target object, effectively copying the data.
-                                 /// </summary>
+                                 /// <inheritdoc />
                                  public void ApplyTo(OverridableScriptableObject target)
                                  {
                                      if (target == null) 
@@ -112,9 +110,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                                      {{string.Join("\n\t\t\t", fields.Select(p => $"t.{p.Name} = {p.Name};"))}}
                                  }
                                  
-                                 /// <summary>
-                                 /// Copies the field values from the source object to this instance.
-                                 /// </summary>
+                                 /// <inheritdoc />
                                  public void CopyFrom(OverridableScriptableObject source)
                                  {
                                      if (source == null) 

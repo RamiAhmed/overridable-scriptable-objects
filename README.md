@@ -1,10 +1,10 @@
 # Overridable Scriptable Objects for Unity
 
-Easily override ScriptableObject values at runtime in your Unity project by storing JSON files in the persistent data folder.
+Easily override Unity `ScriptableObject` values at runtime in your Unity project by storing JSON files in the persistent data folder.
 
-Have you found yourself needing to change values of ScriptableObjects at runtime, but didn't want to modify the original asset and make a new build?
+_Have you found yourself needing to change values of scriptable objects at runtime, but didn't want to modify the original asset or make a new build?
 I wanted to be able to override our configurations (stored as ScriptableObjects) at runtime, without having to create a new build every time.
-This package provides a simple way to create overridable ScriptableObjects that can be saved, loaded, and deleted at runtime, using JSON serialization.
+This package provides a simple way to create overridable ScriptableObjects that can be saved, loaded, and deleted at runtime, using Unity's built-in JSON serialization._
 
 ## Installation
 
@@ -21,16 +21,17 @@ You can install the package by referencing the Git URL (**recommended** for pack
 
 2. **Dependencies**  
    No external dependencies required. Works with Unity's built-in serialization (`JsonUtility`).
+   This package relies on [incremental source generation](https://docs.unity3d.com/6000.0/Documentation/Manual/create-source-generator.html), which is unsupported in older Unity versions.
 
 3. **Samples**  
    Sample usage is provided in the `Samples` folder, which may be separately imported. 
-It's a very basic sample meant to get you started quickly.
+It's a very basic sample just meant to get you started quickly with a bare bones example.
 
 ## Usage Guide
 
 ### 1. Create an Overridable Scriptable Object
 
-Inherit from `OverridableScriptableObject` for any ScriptableObject you want to be overridable.
+Inherit from `OverridableScriptableObject` for any `ScriptableObject` you want to be overridable:
 
 ```csharp
 [CreateAssetMenu(...)]
@@ -41,18 +42,18 @@ public class MyConfig : OverridableScriptableObject
 }
 ```
 
-A serializable representation of your ScriptableObject will be automatically created, and named `{ScriptableObjectTypeName}_GeneratedSerializableData`, e.g. `MyConfig_GeneratedSerializableData`. 
+A serializable representation of your `ScriptableObject` will automatically be generated, and named `{ScriptableObjectTypeName}_GeneratedSerializableData`, e.g. `MyConfig_GeneratedSerializableData`. 
 In general you will not need to interact with this class directly, as the `OverridableScriptableObject` handles serialization and deserialization, through the `OverridableScriptableObjectUtil`.
 
 **Note**: Only `public` and `internal` fields are serialized. Private fields will not be included in the override, not even if they are marked with `[SerializeField]`.
 
 Scriptable object overrides are stored in the persistent data path, which is outside the Unity project folder. This allows for runtime modifications without affecting the original asset, including for builds.
 The exact path is:  
-`{Application.persistentDataPath}/Overrides/{YourScriptableObjectName}.json`.
+`{Application.persistentDataPath}/Overrides/{YourScriptableObjectName}.json`, e.g. `C:\Users\{UserName}\AppData\LocalLow\{UnityProjectCompanyName}\{UnityProjectName}\Overrides\`.
 
 ### 2. Editor Actions
 
-In the Unity Editor, select your ScriptableObject asset.  
+In the Unity Editor, select your `ScriptableObject` asset. Make sure the Unity inspector is visible.  
 Use the custom inspector panel to:
 
 - **Save As Override**: Save current values as a JSON override to persistent data folder.
@@ -79,7 +80,8 @@ bool exists = config.ExistsOverride();
 // Delete override
 config.DeleteOverride();
 ```
-The idea is to call `LoadOverride()` at the start of your game or scene to apply any overrides, and before any usage of the scriptable object.
+The idea is to call `LoadOverride()` at the start of your game or scene to apply any overrides, and before any usage of the scriptable object. 
+Note that `LoadOverride()` returns `null` if no override exists, so you should handle that case in your code or check with `ExistsOverride()` first.
 
 ### 4. Example Usage
 
@@ -90,7 +92,7 @@ A typical workflow would look something like this:
 - This will create a JSON file in the persistent data path with the current values. 
   - You can also create this file manually, it's just easier to do it through the editor.
 - Open the JSON file in your favorite text editor, modify the values as needed, and save it.
-- Now when you run your game, it will load the override values from the JSON file instead of the original ScriptableObject asset in the project (assuming your code calls `LoadOverride()` prior to any usage).
+- Now when you run your game, it will load the override values from the JSON file instead of the original `OverridableScriptableObject` asset in the project (assuming your code calls `LoadOverride()` prior to any usage).
 
 ```csharp
 public class GameManager : MonoBehaviour
@@ -100,7 +102,8 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         // Load override at runtime
-        GameConfig = GameConfig.LoadOverride();
+        if (GameConfig.ExistsOverride())
+            GameConfig = GameConfig.LoadOverride();
 
         // Use the config values
         Debug.Log($"Game Name: {GameConfig.Name}, Value: {GameConfig.Value}");
@@ -111,8 +114,8 @@ public class GameManager : MonoBehaviour
 ## Notes
 
 - Overrides are stored per device, outside the Unity project, in the persistent data path.
-- Useful for runtime configuration overrides or user settings.
 - Complex Unity types (like `GameObject`, `Transform`, etc.) are not supported in overrides. Only [JSON-serializable types](https://docs.unity3d.com/ScriptReference/JsonUtility.html) are supported.
+- This package is designed for runtime overrides, not for editor-time modifications. The editor actions are just a convenience to manage overrides easily. They will work in the editor as expected, however.
 
 
 ## License

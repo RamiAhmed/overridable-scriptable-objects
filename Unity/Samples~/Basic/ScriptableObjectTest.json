@@ -1,0 +1,5 @@
+{
+    "TestString": "Overriden test string!",
+    "TestFloat": 0.1234,
+    "TestInt": 123
+}

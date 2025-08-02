@@ -49,7 +49,7 @@ In general you will not need to interact with this class directly, as the `Overr
 
 Scriptable object overrides are stored in the persistent data path, which is outside the Unity project folder. This allows for runtime modifications without affecting the original asset, including for builds.
 The exact path is:  
-`{Application.persistentDataPath}/Overrides/{YourScriptableObjectName}.json`, e.g. `C:\Users\{UserName}\AppData\LocalLow\{UnityProjectCompanyName}\{UnityProjectName}\Overrides\`.
+`{Application.persistentDataPath}/Overrides/{YourScriptableObjectName}.json`, e.g. `C:/Users/{UserName}/AppData/LocalLow/{UnityProjectCompanyName}/{UnityProjectName}/Overrides/`.
 
 ### 2. Editor Actions
 
@@ -63,7 +63,7 @@ Use the custom inspector panel to:
 
 ### 3. Runtime API
 
-You can manage overrides via code:
+You manage overrides via code:
 
 ```csharp
 var config = ...; // your OverridableScriptableObject instance
@@ -99,9 +99,9 @@ public class GameManager : MonoBehaviour
 {
     public MyConfig GameConfig;
     
-    void Start()
+    private void Start()
     {
-        // Load override at runtime
+        // Load override at runtime, if one exists
         if (GameConfig.ExistsOverride())
             GameConfig = GameConfig.LoadOverride();
 
@@ -114,8 +114,8 @@ public class GameManager : MonoBehaviour
 ## Notes
 
 - Overrides are stored per device, outside the Unity project, in the persistent data path.
-- Complex Unity types (like `GameObject`, `Transform`, etc.) are not supported in overrides. Only [JSON-serializable types](https://docs.unity3d.com/ScriptReference/JsonUtility.html) are supported.
-- This package is designed for runtime overrides, not for editor-time modifications. The editor actions are just a convenience to manage overrides easily. They will work in the editor as expected, however.
+- Complex Unity types (like `GameObject`, `Transform`, etc.) are not supported in overrides. Only [JSON-serializable types](https://docs.unity3d.com/ScriptReference/JsonUtility.html) are included in the generated, serializable data type.
+- This package is designed for runtime overrides, not for editor-time modifications. The editor actions are just a convenience to manage overrides easily. They will, however, work in the editor as expected.
 
 
 ## License

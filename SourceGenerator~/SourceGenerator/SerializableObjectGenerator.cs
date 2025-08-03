@@ -64,7 +64,6 @@ public class SerializableObjectGenerator : IIncrementalGenerator
 
             var fields = GetAllFields(typeSymbol).ToImmutableArray();
             if (fields == null || !fields.Any())
-                // If there are no properties, we skip generating the code.
                 continue;
 
             var namespaceName = typeSymbol.ContainingNamespace.ToDisplayString();
@@ -139,8 +138,10 @@ public class SerializableObjectGenerator : IIncrementalGenerator
             var members = currentType
                 .GetMembers()
                 .OfType<IFieldSymbol>()
-                .Where(t => !t.IsStatic && !t.IsConst)
-                .Where(t => t.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal);
+                .Where(t => t is { IsStatic: false, IsConst: false, IsReadOnly: false })
+                .Where(t => t.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal)
+                .Where(t => !InheritsFrom(t.Type, "Object") || t.Type.ContainingNamespace.ToDisplayString() != "UnityEngine")
+                ;
 
             foreach (var member in members)
                 yield return member;

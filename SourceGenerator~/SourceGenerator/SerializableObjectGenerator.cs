@@ -140,7 +140,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                 .OfType<IFieldSymbol>()
                 .Where(t => t is { IsStatic: false, IsConst: false, IsReadOnly: false })
                 .Where(t => t.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal)
-                .Where(t => !IsUnityEngineObject(t.Type));
+                .Where(t => IsTypeSerializable(t.Type) && !IsUnityEngineObject(t.Type));
 
             foreach (var member in members)
                 yield return member;
@@ -166,6 +166,23 @@ public class SerializableObjectGenerator : IIncrementalGenerator
             if (current?.Name == "ScriptableObject")
                 break; // Stop if we reach ScriptableObject, as we don't want to include its properties.
         }
+
+        return false;
+    }
+
+    private static bool IsTypeSerializable(ITypeSymbol type)
+    {
+        // Primitives, enums, and string are serializable
+        if (type.IsValueType || type.SpecialType is SpecialType.System_String or SpecialType.System_Enum)
+            return true;
+
+        // Arrays: check element type
+        if (type is IArrayTypeSymbol arrayType)
+            return IsTypeSerializable(arrayType.ElementType);
+
+        // Check for [Serializable] attribute
+        if (type.GetAttributes().Any(a => a.AttributeClass?.Name == "SerializableAttribute"))
+            return true;
 
         return false;
     }

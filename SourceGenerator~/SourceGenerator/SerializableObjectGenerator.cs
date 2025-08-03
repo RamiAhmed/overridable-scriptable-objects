@@ -177,7 +177,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
         {
             if (current.Name == "Object" && current.ContainingNamespace.ToDisplayString() == "UnityEngine")
                 return true;
-            
+
             current = current.BaseType;
         }
 

@@ -31,6 +31,8 @@ It's a very basic sample just meant to get you started quickly with a bare bones
 
 ### 1. Create an Overridable Scriptable Object
 
+If you're using assembly definitions, don't forget to add a reference to `OverridableScriptableObjects.Runtime`. 
+
 Inherit from `OverridableScriptableObject` for any `ScriptableObject` you want to be overridable:
 
 ```csharp

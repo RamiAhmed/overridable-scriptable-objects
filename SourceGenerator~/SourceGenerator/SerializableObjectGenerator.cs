@@ -140,8 +140,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                 .OfType<IFieldSymbol>()
                 .Where(t => t is { IsStatic: false, IsConst: false, IsReadOnly: false })
                 .Where(t => t.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal)
-                .Where(t => !InheritsFrom(t.Type, "Object") || t.Type.ContainingNamespace.ToDisplayString() != "UnityEngine")
-                ;
+                .Where(t => !IsUnityEngineObject(t.Type));
 
             foreach (var member in members)
                 yield return member;
@@ -166,6 +165,20 @@ public class SerializableObjectGenerator : IIncrementalGenerator
 
             if (current?.Name == "ScriptableObject")
                 break; // Stop if we reach ScriptableObject, as we don't want to include its properties.
+        }
+
+        return false;
+    }
+
+    private static bool IsUnityEngineObject(ITypeSymbol typeSymbol)
+    {
+        var current = typeSymbol;
+        while (current != null && current.SpecialType != SpecialType.System_Object)
+        {
+            if (current.Name == "Object" && current.ContainingNamespace.ToDisplayString() == "UnityEngine")
+                return true;
+            
+            current = current.BaseType;
         }
 
         return false;

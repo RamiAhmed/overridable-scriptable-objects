@@ -63,6 +63,8 @@ Use the custom inspector panel to:
 
 ### 3. Runtime API
 
+If you're using assembly definitions, don't forget to add a reference to `OverridableScriptableObjects.Runtime`. 
+
 You manage overrides via code:
 
 ```csharp

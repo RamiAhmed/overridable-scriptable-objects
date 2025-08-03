@@ -192,7 +192,7 @@ namespace OverridableScriptableObjects.Runtime
             }
 
             throw new ArgumentException(
-                $"Generated serializable data type '{expectedTypeName}' not found. Ensure that SerializableObjectGenerator has run successfully.",
+                $"Generated serializable data type '{expectedTypeName}' not found. Ensure that it has public or internal serializable, non-UnityEngine.Object fields.",
                 nameof(type));
         }
     }

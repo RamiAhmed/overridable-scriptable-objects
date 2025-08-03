@@ -75,7 +75,7 @@ public class SerializableObjectGenerator : IIncrementalGenerator
                 .Where(n => n is not null)
                 .Select(n => n.ToDisplayString())
                 .Where(n => n != namespaceName)
-                .Append("OverridableScriptableObjects.Runtime")
+                .Concat(["System", "OverridableScriptableObjects.Runtime"])
                 .Distinct()
                 .OrderBy(n => n)
                 .Select(n => $"using {n};");

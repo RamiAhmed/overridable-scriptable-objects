@@ -192,6 +192,9 @@ public class SerializableObjectGenerator : IIncrementalGenerator
         var current = typeSymbol;
         while (current != null && current.SpecialType != SpecialType.System_Object)
         {
+            if (current is IArrayTypeSymbol arrayType)
+                current = arrayType.ElementType;
+            
             if (current.Name == "Object" && current.ContainingNamespace.ToDisplayString() == "UnityEngine")
                 return true;
 

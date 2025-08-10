@@ -1,14 +1,16 @@
-﻿using OverridableScriptableObjects.Runtime;
+﻿using System.Linq;
+using OverridableScriptableObjects.Runtime;
 using UnityEditor;
 using UnityEngine;
 
 namespace OverridableScriptableObjects.Editor
 {
     /// <summary>
-    ///     Custom editor for <see cref="OverridableScriptableObject"/>.
+    ///     Custom editor for <see cref="OverridableScriptableObject" />.
     ///     This editor provides a panel with buttons to save, load, show, and delete overrides for the scriptable object.
     ///     It also displays the default inspector for the scriptable object, allowing users to edit its properties.
-    ///     The override file is stored in the persistent data path of the application (see <see cref="Application.persistentDataPath"/>).
+    ///     The override file is stored in the persistent data path of the application (see
+    ///     <see cref="Application.persistentDataPath" />).
     /// </summary>
     [CustomEditor(typeof(OverridableScriptableObject), true)]
     public class OverridableScriptableObjectEditor : UnityEditor.Editor
@@ -27,8 +29,18 @@ namespace OverridableScriptableObjects.Editor
             EditorGUILayout.LabelField("Overridable Scriptable Object Actions", EditorStyles.boldLabel);
             EditorGUILayout.Separator();
 
-            using var horizontalScope = new EditorGUILayout.HorizontalScope();
             var t = (OverridableScriptableObject)target;
+            OverridableScriptableObjectUtil.Initialize();
+
+            var savePath = t.GetOverrideFilePath();
+            if (string.IsNullOrEmpty(savePath))
+                savePath = OverridableScriptableObjectUtil.GetTargetFilePaths(t.name).FirstOrDefault();
+
+            EditorGUILayout.LabelField(new GUIContent("Override Scriptable Object Path", savePath),
+                new GUIContent(savePath, savePath));
+            EditorGUILayout.Separator();
+
+            using var horizontalScope = new EditorGUILayout.HorizontalScope();
 
             if (GUILayout.Button("Save As Override", EditorStyles.miniButtonLeft))
             {

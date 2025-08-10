@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -11,7 +13,24 @@ namespace OverridableScriptableObjects.Runtime
     /// </summary>
     public static class OverridableScriptableObjectUtil
     {
-        private const string OverridesFolder = "Overrides";
+        private static OverridableScriptableObjectConfiguration _configuration;
+
+        [RuntimeInitializeOnLoadMethod]
+        public static void Initialize()
+        {
+            _configuration = Resources.Load<OverridableScriptableObjectConfiguration>(
+                nameof(OverridableScriptableObjectConfiguration));
+
+            // If no configuration is found in Resources, create a default one.
+            if (_configuration == null)
+            {
+                _configuration = ScriptableObject.CreateInstance<OverridableScriptableObjectConfiguration>();
+                _configuration.ApplyDefaults();
+            }
+
+            if (_configuration.ExistsOverride())
+                _configuration = _configuration.LoadOverride();
+        }
 
         /// <summary>
         ///     Checks if a scriptable object override exists for the given scriptable object.
@@ -21,17 +40,22 @@ namespace OverridableScriptableObjects.Runtime
         /// <returns>True if the override file exists, otherwise false.</returns>
         public static bool ExistsOverride<T>(this T scriptableObject) where T : OverridableScriptableObject
         {
-            return Exists(scriptableObject.name);
+            return Exists(scriptableObject.name, out _);
         }
 
         /// <summary>
         ///     Checks if an override file exists for the given type.
         /// </summary>
         /// <param name="fileName">Name of the scriptable object</param>
+        /// <param name="filePath">
+        ///     The override file path for the scriptable object with the given <paramref name="fileName" />, if
+        ///     one exists.
+        /// </param>
         /// <returns>True if the override file exists, otherwise false.</returns>
-        public static bool Exists(string fileName)
+        public static bool Exists(string fileName, out string filePath)
         {
-            return File.Exists(GetOverrideFilePath(fileName));
+            filePath = GetOverrideFilePath(fileName);
+            return !string.IsNullOrEmpty(filePath);
         }
 
         /// <summary>
@@ -52,10 +76,9 @@ namespace OverridableScriptableObjects.Runtime
         /// <returns>True if the override was deleted, otherwise false.</returns>
         public static bool Delete(string fileName)
         {
-            if (!Exists(fileName))
+            if (!Exists(fileName, out var overridesPath))
                 return false;
 
-            var overridesPath = GetOverrideFilePath(fileName);
             File.Delete(overridesPath);
             return true;
         }
@@ -66,15 +89,13 @@ namespace OverridableScriptableObjects.Runtime
         /// <typeparam name="T">Type of scriptable object</typeparam>
         /// <param name="scriptableObject">Scriptable object to save</param>
         /// <param name="overrideIfExists">Whether to override if the file exists</param>
-        /// <param name="prettyPrintJson">Whether to pretty print the JSON</param>
         /// <returns>True if the override was saved, otherwise false.</returns>
         public static bool SaveOverride<T>(
             this T scriptableObject,
-            bool overrideIfExists = true,
-            bool prettyPrintJson = true)
+            bool overrideIfExists = true)
             where T : OverridableScriptableObject
         {
-            return Save(scriptableObject, overrideIfExists, prettyPrintJson);
+            return Save(scriptableObject, overrideIfExists);
         }
 
         /// <summary>
@@ -82,32 +103,38 @@ namespace OverridableScriptableObjects.Runtime
         /// </summary>
         /// <param name="scriptableObject">Scriptable object to save</param>
         /// <param name="overrideIfExists">Whether to override if the file exists</param>
-        /// <param name="prettyPrintJson">Whether to pretty print the JSON</param>
         /// <returns>True if the override was saved, otherwise false.</returns>
         public static bool Save(
             OverridableScriptableObject scriptableObject,
-            bool overrideIfExists = true,
-            bool prettyPrintJson = true)
+            bool overrideIfExists = true)
         {
             if (scriptableObject == null)
                 throw new ArgumentNullException(nameof(scriptableObject));
 
-            if (!overrideIfExists && Exists(scriptableObject.name))
+            var overrideExists = Exists(scriptableObject.name, out var overridesPath);
+            if (!overrideIfExists && overrideExists)
                 return false;
 
-            var overridesDirectoryPath = GetOverridesDirectoryPath();
-            if (!Directory.Exists(overridesDirectoryPath))
-                Directory.CreateDirectory(overridesDirectoryPath);
+            if (!overrideExists)
+            {
+                var overridesDirectoryPath = GetTargetDirectoryPaths().FirstOrDefault();
+                if (string.IsNullOrEmpty(overridesDirectoryPath))
+                    return false;
+
+                if (!Directory.Exists(overridesDirectoryPath))
+                    Directory.CreateDirectory(overridesDirectoryPath);
+
+                overridesPath = GetTargetFilePaths(scriptableObject.name).First();
+            }
 
             var dataType = GetSerializableDataType(scriptableObject.GetType());
             var data = (ISerializableOverridableScriptableObject)Activator.CreateInstance(dataType);
             data.CopyFrom(scriptableObject);
 
-            var json = JsonUtility.ToJson(data, prettyPrintJson);
+            var json = JsonUtility.ToJson(data, _configuration.PrettyPrintJson);
             if (string.IsNullOrEmpty(json))
                 return false;
 
-            var overridesPath = GetOverrideFilePath(scriptableObject.name);
             File.WriteAllText(overridesPath, json);
             return true;
         }
@@ -133,10 +160,9 @@ namespace OverridableScriptableObjects.Runtime
             if (scriptableObject == null)
                 throw new ArgumentNullException(nameof(scriptableObject));
 
-            if (!Exists(scriptableObject.name))
+            if (!Exists(scriptableObject.name, out var overridesPath))
                 return null;
 
-            var overridesPath = GetOverrideFilePath(scriptableObject.name);
             var json = File.ReadAllText(overridesPath);
             if (string.IsNullOrEmpty(json))
                 return null;
@@ -173,12 +199,37 @@ namespace OverridableScriptableObjects.Runtime
         /// <returns>Path to the override file.</returns>
         public static string GetOverrideFilePath(string fileName)
         {
-            return Path.Combine(GetOverridesDirectoryPath(), fileName + ".json");
+            return GetTargetFilePaths(fileName)
+                .Where(File.Exists)
+                .FirstOrDefault();
         }
 
-        private static string GetOverridesDirectoryPath()
+        public static IEnumerable<string> GetTargetFilePaths(string fileName)
         {
-            return Path.Combine(Application.persistentDataPath, OverridesFolder);
+            var fullFileName = GetFileName(fileName);
+            return GetTargetDirectoryPaths()
+                .Select(directoryPath => Path.Combine(directoryPath, fullFileName));
+        }
+
+        private static IEnumerable<string> GetTargetDirectoryPaths()
+        {
+            if (_configuration == null)
+                throw new InvalidOperationException(
+                    $"{nameof(OverridableScriptableObjectConfiguration)} not initialized correctly. " +
+                    "Make sure a configuration exists in Resources.");
+
+            if (_configuration.OverridePaths == null || _configuration.OverridePaths.Length == 0)
+                throw new InvalidOperationException(
+                    $"{nameof(OverridableScriptableObjectConfiguration)} has no override paths configured. " +
+                    "Please configure at least one override path in the configuration asset.");
+
+            foreach (var overridePath in _configuration.OverridePaths)
+                yield return overridePath.GetFullPath(_configuration.OverridesFolder);
+        }
+
+        private static string GetFileName(string fileName)
+        {
+            return $"{fileName}.json";
         }
 
         private static Type GetSerializableDataType(Type type)

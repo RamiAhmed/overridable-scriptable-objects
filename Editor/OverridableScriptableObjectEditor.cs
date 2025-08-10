@@ -30,7 +30,6 @@ namespace OverridableScriptableObjects.Editor
             EditorGUILayout.Separator();
 
             var t = (OverridableScriptableObject)target;
-            OverridableScriptableObjectUtil.Initialize();
 
             var savePath = t.GetOverrideFilePath();
             if (string.IsNullOrEmpty(savePath))

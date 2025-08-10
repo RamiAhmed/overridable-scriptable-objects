@@ -15,21 +15,28 @@ namespace OverridableScriptableObjects.Runtime
     {
         private static OverridableScriptableObjectConfiguration _configuration;
 
-        [RuntimeInitializeOnLoadMethod]
-        public static void Initialize()
+        private static OverridableScriptableObjectConfiguration Configuration
         {
-            _configuration = Resources.Load<OverridableScriptableObjectConfiguration>(
-                nameof(OverridableScriptableObjectConfiguration));
-
-            // If no configuration is found in Resources, create a default one.
-            if (_configuration == null)
+            get
             {
-                _configuration = ScriptableObject.CreateInstance<OverridableScriptableObjectConfiguration>();
-                _configuration.ApplyDefaults();
-            }
+                if (_configuration != null)
+                    return _configuration;
 
-            if (_configuration.ExistsOverride())
-                _configuration = _configuration.LoadOverride();
+                _configuration = Resources.Load<OverridableScriptableObjectConfiguration>(
+                    nameof(OverridableScriptableObjectConfiguration));
+
+                // If no configuration is found in Resources, create a default one.
+                if (_configuration == null)
+                {
+                    _configuration = ScriptableObject.CreateInstance<OverridableScriptableObjectConfiguration>();
+                    _configuration.ApplyDefaults();
+                }
+
+                if (_configuration.ExistsOverride())
+                    _configuration = _configuration.LoadOverride();
+
+                return _configuration;
+            }
         }
 
         /// <summary>
@@ -131,7 +138,7 @@ namespace OverridableScriptableObjects.Runtime
             var data = (ISerializableOverridableScriptableObject)Activator.CreateInstance(dataType);
             data.CopyFrom(scriptableObject);
 
-            var json = JsonUtility.ToJson(data, _configuration.PrettyPrintJson);
+            var json = JsonUtility.ToJson(data, Configuration.PrettyPrintJson);
             if (string.IsNullOrEmpty(json))
                 return false;
 
@@ -213,18 +220,18 @@ namespace OverridableScriptableObjects.Runtime
 
         private static IEnumerable<string> GetTargetDirectoryPaths()
         {
-            if (_configuration == null)
+            if (Configuration == null)
                 throw new InvalidOperationException(
                     $"{nameof(OverridableScriptableObjectConfiguration)} not initialized correctly. " +
                     "Make sure a configuration exists in Resources.");
 
-            if (_configuration.OverridePaths == null || _configuration.OverridePaths.Length == 0)
+            if (Configuration.OverridePaths == null || Configuration.OverridePaths.Length == 0)
                 throw new InvalidOperationException(
                     $"{nameof(OverridableScriptableObjectConfiguration)} has no override paths configured. " +
                     "Please configure at least one override path in the configuration asset.");
 
-            foreach (var overridePath in _configuration.OverridePaths)
-                yield return overridePath.GetFullPath(_configuration.OverridesFolder);
+            foreach (var overridePath in Configuration.OverridePaths)
+                yield return overridePath.GetFullPath(Configuration.OverridesFolder);
         }
 
         private static string GetFileName(string fileName)

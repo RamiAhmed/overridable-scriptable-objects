@@ -11,6 +11,7 @@ This package provides a simple way to create overridable ScriptableObjects that 
 
 ## Features
 - Override ScriptableObject values at runtime without rebuilding your project.
+- **Partial JSON override support**: Override files can contain only the fields you want to change, leaving other fields at their original values.
 - Flexible configuration asset for override management, including hierarchical and custom paths.
 - Editor integration for saving, loading, showing, and deleting overrides.
 - Supports multiple prioritized override paths.
@@ -114,9 +115,71 @@ bool exists = config.ExistsOverride();
 config.DeleteOverride();
 ```
 
-Call `LoadOverride()` at the start of your game/scene to apply overrides. Handle the case where no override exists, as it may return `null`.
+Call `LoadOverride()` at the start of your game/scene to apply overrides. Handle the case where no override exists, as it may return `null` (or use `TryLoadOverride()`).
 
-### 4. Ignore Overridable Field Attribute
+### 4. Partial JSON Overrides
+
+Override files support partial overrides, meaning you only need to include the fields you want to change. Any fields not present in the JSON will retain their original values from the ScriptableObject asset.
+
+**Example:**
+
+Given a ScriptableObject with multiple fields:
+
+```csharp
+public class GameSettings : OverridableScriptableObject
+{
+    public string GameName = "My Game";
+    public int MaxPlayers = 4;
+    public float GameSpeed = 1.0f;
+    public bool EnableDebug = false;
+}
+```
+
+You can create a minimal override JSON that only changes specific fields:
+
+```json
+{
+  "EnableDebug": true,
+  "GameSpeed": 2.0
+}
+```
+
+When loaded, only `EnableDebug` and `GameSpeed` are overridden. `GameName` and `MaxPlayers` retain their original values from the asset ("My Game" and 4).
+
+This makes it easy to:
+- Create minimal configuration overrides for different environments (dev, staging, production)
+- Override only what's needed without duplicating all field values
+- Maintain smaller, more readable override files
+
+**Note:** Using "Save As Override" in the editor saves all fields. To create partial overrides, manually edit the JSON file.
+
+#### Common Pitfalls
+
+When manually editing JSON override files, watch out for these common mistakes:
+
+**Trailing Commas** ❌
+```json
+{
+  "EnableDebug": true,
+  "GameSpeed": 2.0,
+}
+```
+
+**Correct Format** ✓
+```json
+{
+  "EnableDebug": true,
+  "GameSpeed": 2.0
+}
+```
+
+Other common issues:
+- Missing quotes around field names: `{field: value}` instead of `{"field": value}`
+- Empty objects `{}`
+
+If you encounter parsing errors, the system will display a detailed error message with the JSON content and suggestions for fixing common issues.
+
+### 5. Ignore Overridable Field Attribute
 
 Exclude fields from override serialization by marking them with `IgnoreOverridableFieldAttribute`:
 
@@ -127,7 +190,7 @@ public int InternalValue;
 
 Fields with this attribute are not included in override JSON, but remain in Unity serialization (e.g. inspector).
 
-### 5. Example Usage
+### 6. Example Usage
 
 ```csharp
 public class GameManager : MonoBehaviour
@@ -142,12 +205,26 @@ public class GameManager : MonoBehaviour
 }
 ```
 
+Or shorter:
+
+```csharp
+public class GameManager : MonoBehaviour
+{
+    public MyConfig GameConfig;
+    private void Start()
+    {
+        GameConfig = GameConfig.TryLoadOverride();
+        Debug.Log($"Game Name: {GameConfig.Name}, Value: {GameConfig.Value}");
+    }
+}
+```
+
 ---
 
 ## Notes
 - Overrides are stored per device, outside the Unity project, in the configured path(s).
 - Complex Unity types (e.g. `GameObject`, `Transform`) are not supported in overrides. Only [JSON-serializable types](https://docs.unity3d.com/ScriptReference/JsonUtility.html) are included.
-- Designed for runtime overrides; editor actions are for convenience.
+- Designed for runtime overrides; editor actions are provided purely for convenience.
 
 ---
 

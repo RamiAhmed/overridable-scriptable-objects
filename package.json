@@ -1,6 +1,6 @@
 {
   "name": "com.ramiahmed.overridable-scriptable-objects",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Support for overriding scriptable objects in Unity by placing a JSON representation of the file in a configurable folder.",
   "displayName": "Overridable Scriptable Objects",
   "unity": "6000.0",
@@ -14,6 +14,7 @@
     "Scriptable Object",
     "ScriptableObjet",
     "Override",
+    "Serialization",
     "JSON"
   ],
   "samples": [

@@ -40,6 +40,18 @@ namespace OverridableScriptableObjects.Runtime
         }
 
         /// <summary>
+        ///     Attempts to return an overridden version of the given scriptable object
+        ///     if an override exists; otherwise, returns the original scriptable object.
+        /// </summary>
+        /// <param name="scriptableObject">The scriptable object to check and possibly override.</param>
+        /// <typeparam name="T">The type of the scriptable object.</typeparam>
+        /// <returns>The overridden scriptable object if an override exists; otherwise, the original scriptable object.</returns>
+        public static T TryLoadOverride<T>(this T scriptableObject) where T : OverridableScriptableObject
+        {
+            return ExistsOverride(scriptableObject) ? LoadOverride(scriptableObject) : scriptableObject;
+        }
+
+        /// <summary>
         ///     Checks if a scriptable object override exists for the given scriptable object.
         /// </summary>
         /// <param name="scriptableObject">Scriptable object to check</param>
@@ -159,6 +171,7 @@ namespace OverridableScriptableObjects.Runtime
 
         /// <summary>
         ///     Loads the override for the given scriptable object and applies it.
+        ///     Supports partial JSON overrides - only fields present in the JSON file will be overridden.
         /// </summary>
         /// <param name="scriptableObject">Scriptable object to load override for</param>
         /// <returns>The scriptable object with override applied, or null if not found.</returns>
@@ -174,9 +187,44 @@ namespace OverridableScriptableObjects.Runtime
             if (string.IsNullOrEmpty(json))
                 return null;
 
-            var dataType = GetSerializableDataType(scriptableObject.GetType());
-            if (JsonUtility.FromJson(json, dataType) is not ISerializableOverridableScriptableObject data)
+            // Trim whitespace to avoid issues with leading/trailing spaces
+            json = json.Trim();
+
+            // Validate basic JSON structure
+            if (!json.StartsWith("{") || !json.EndsWith("}"))
+            {
+                Debug.LogError($"Invalid JSON override for '{scriptableObject.name}' from '{overridesPath}'. " +
+                               "JSON must be a valid object enclosed in curly braces { }. " +
+                               $"Current content starts with: {(json.Length > 50 ? json[..50] + "..." : json)}");
                 return null;
+            }
+
+            // First, create a data object with all the original values from the scriptable object
+            var dataType = GetSerializableDataType(scriptableObject.GetType());
+            if (Activator.CreateInstance(dataType) is not ISerializableOverridableScriptableObject data)
+                return null;
+
+            data.CopyFrom(scriptableObject);
+
+            // Then overwrite only the fields present in the JSON file (partial override support)
+            try
+            {
+                JsonUtility.FromJsonOverwrite(json, data);
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.LogError($"Failed to parse JSON override for '{scriptableObject.name}' from '{overridesPath}'. " +
+                               $"Error: {ex.Message}\n" +
+                               $"JSON content: {json}\n" +
+                               $"Expected data type: {dataType.Name}\n" +
+                               "Common issues:\n" +
+                               "  - Trailing commas after the last field\n" +
+                               "  - Missing quotes around field names or values\n" +
+                               "  - Field names that don't match the generated data class\n" +
+                               "  - Empty object {}\n" +
+                               $"Note: Field names in JSON should match '{dataType.Name}', not the ScriptableObject class.");
+                return null;
+            }
 
 #if UNITY_EDITOR
             // In the editor we instantiate the scriptable object to avoid changing the original asset's values.

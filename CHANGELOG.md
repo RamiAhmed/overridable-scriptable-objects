@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 04-12-2025
+
+- Added support for partial JSON overrides. Override files no longer need to contain all fields - only fields present in the JSON will be overridden, while other fields retain their original values from the ScriptableObject asset.
+
 ## [1.0.1] - 10-08-2025
 
 - Added configuration asset (`OverridableScriptableObjectConfiguration`) for configuration management.
